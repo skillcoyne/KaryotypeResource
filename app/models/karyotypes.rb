@@ -1,7 +1,8 @@
 class Karyotypes < ActiveRecord::Base
   set_table_name 'karyotypes'
 
-  has_one :karyotype_source
+  belongs_to :karyotype_source
+  has_one :cell_line
 
   #attr_accessible :id, :karyotype, :source
 

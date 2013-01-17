@@ -1,4 +1,4 @@
-
+DROP DATABASE `cancer_karyotypes`;
 CREATE DATABASE `cancer_karyotypes`;
 
 USE `cancer_karyotypes`;
@@ -8,6 +8,7 @@ CREATE TABLE `karyotypes` (
   `source_id` int(11) NOT NULL,
   `source_type` ENUM('patient', 'cell line') NOT NULL,
   `karyotype` text NOT NULL,
+  `cell_line_id` int(11),
   PRIMARY KEY (`karyotype_id`)
 );
 
@@ -23,7 +24,6 @@ CREATE TABLE `karyotype_source` (
 CREATE TABLE `cancer` (
   `cancer_id` int(11) NOT NULL AUTO_INCREMENT,
   `cancer` text NOT NULL,
-  `cancer_short` varchar(32) NOT NULL,
   PRIMARY KEY(`cancer_id`)
 );
 
@@ -43,19 +43,27 @@ CREATE TABLE `breakpoint_karyotype` (
   `karyotype_id` int(11) NOT NULL
 );
 
-
 CREATE TABLE `aberrations` (
   `aberration_id` int(11) NOT NULL AUTO_INCREMENT,
+  `aberration_class` varchar(32) NOT NULL,
   `aberration` text NOT NULL,
   PRIMARY KEY (`aberration_id`)
 );
 
 CREATE TABLE `karyotype_aberration` (
-  `karotype_id` int(11) NOT NULL,
+  `karyotype_id` int(11) NOT NULL,
   `aberration_id` int(11) NOT NULL
 );
 
+CREATE TABLE `cancer_lookup` (
+  `name` varchar(256) NOT NULL,
+  `translation` varchar(112) NOT NULL
+);
 
-
+CREATE TABLE `cell_lines` (
+  `cell_line_id` int(11) NOT NULL AUTO_INCREMENT,
+  `cell_line` varchar(32) NOT NULL,
+  PRIMARY KEY(`cell_line_id`)
+);
 
 
