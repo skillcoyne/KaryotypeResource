@@ -1,5 +1,5 @@
-DROP DATABASE `cancer_karyotypes`;
-CREATE DATABASE `cancer_karyotypes` /*!40100 DEFAULT CHARACTER SET latin1 */;
+
+CREATE DATABASE `cancer_karyotypes`;
 
 USE `cancer_karyotypes`;
 
@@ -40,7 +40,7 @@ CREATE TABLE `breakpoints` (
 
 CREATE TABLE `breakpoint_karyotype` (
   `breakpoint_id` int(11) NOT NULL,
-  `karyotype_id int(11) NOT NULL
+  `karyotype_id` int(11) NOT NULL
 );
 
 

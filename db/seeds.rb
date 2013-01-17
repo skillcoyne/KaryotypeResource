@@ -17,5 +17,9 @@ KaryotypeSource.create([{source: 'Mitelman',
                         {source: 'University of Cambridge CGP',
                          source_short: 'cam',
                          url: 'http://www.path.cam.ac.uk/~pawefish/',
-                         description: 'SKY Karyotypes and FISH analysis of Epithelial Cancer Cell Lines'}])
+                         description: 'SKY Karyotypes and FISH analysis of Epithelial Cancer Cell Lines'},
+                        {source: 'NCI Fredrick National Laboratory',
+                         source_short: 'ncifnl',
+                         url: 'http://home.ncifcrf.gov/CCR/60SKY/new/demo1.asp',
+                         description: 'SKY Karyotype of NCI60 cell lines'}])
 
