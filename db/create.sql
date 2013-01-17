@@ -66,4 +66,11 @@ CREATE TABLE `cell_lines` (
   PRIMARY KEY(`cell_line_id`)
 );
 
+CREATE TABLE `chromosome_bands` (
+  `chromosome` varchar(12) NOT NULL,
+  `band` varchar(12) NOT NULL,
+  `start` int(112) NOT NULL,
+  `end` int(112) NOT NULL
+);
+
 
