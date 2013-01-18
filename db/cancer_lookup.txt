@@ -1,4 +1,4 @@
-Acute basophilic leukemia\tAcute myeloid leukemia
+Acute basophilic leukemia,Acute myeloid leukemia
 Acute eosinophilic leukemia,Acute myeloid leukemia
 Acute erythroleukemia (fab type m6),Acute myeloid leukemia
 Acute lymphoblastic leukemia/lymphoblastic lymphoma,Acute lymphoblastic leukemia

@@ -74,7 +74,7 @@ def mitelman(dir, log)
   File.open("#{dir}/mitelman/mm-kary_cleaned.txt", 'r').each_with_index do |line, i|
     line.chomp!
     next if line.start_with? "#"
-    puts "Reading  Mitelman karyotype # #{i}"
+    log.info "Reading  Mitelman karyotype # #{i}"
     #log.info("Reading  Mitelman karyotype # #{i}: #{dir}/mm-karyotypes.txt")
     (karyotype, morph, shortmorph, refno, caseno) = line.split(/\t/)
 
@@ -83,7 +83,7 @@ def mitelman(dir, log)
                               :source => KaryotypeSource.where("source_short = ?", 'mitelman').first,
                               :source_type => 'patient')
     rescue Cytogenetics::StructureError => gse
-      log.info("#{gse.message}: Mitelman line #{i}")
+      log.error("#{gse.message}: Mitelman line #{i}")
       #rescue => error
       #  log.error("Failed to parse karyotype from Mitelman line #{i}: #{error.message}")
       #  log.error(error.backtrace)
@@ -109,7 +109,7 @@ def cambridge(dir, log)
         cl = CellLine.create(:cell_line => entry.sub(/\..*./, ""))
       end
 
-      puts "Reading #{file}..."
+      log.info "Reading #{file}..."
       File.open(file, 'r').each_line do |karyotype|
         karyotype.chomp!
         next if karyotype.length <= 1
@@ -124,7 +124,7 @@ def cambridge(dir, log)
           k.save
 
         rescue Cytogenetics::StructureError => gse
-          log.info( "#{gse.message}: #{file}")
+          log.error( "#{gse.message}: #{file}")
         end
       end
     end
@@ -151,7 +151,7 @@ def ncbi_skyfish(dir, log)
       end
 
       next if kcase.match(/mouse/)
-      puts "Reading #{file} karyotype #{i}"
+      log.info "Reading #{file} karyotype #{i}"
       karyotypes.split(/\//).each do |karyotype|
         begin
           kid = create_karyotype_record(:karyotype => karyotype, :cancer => cancer_name(diag),
@@ -163,7 +163,7 @@ def ncbi_skyfish(dir, log)
             k.save
           end
         rescue Cytogenetics::StructureError => gse
-          log.info("#{gse.message}: NCBI karyotype #{entry} line #{i}")
+          log.error("#{gse.message}: NCBI karyotype #{entry} line #{i}")
           #rescue => error
           #  log.error("Failed to parse karyotype from Mitelman line #{i}: #{error.message}")
           #  log.error(error.backtrace)
@@ -192,7 +192,7 @@ def nci_fcrf(dir, log)
         cl = CellLine.create(:cell_line => entry.sub(/\..*./, ""))
       end
 
-      puts "Reading #{file}"
+      log.info "Reading #{file}"
       karyotype = File.readlines(file).map! { |e| e.chomp! }
       karyotype = karyotype.join("")
 
@@ -206,7 +206,7 @@ def nci_fcrf(dir, log)
         k.save
 
       rescue Cytogenetics::StructureError => gse
-        log.info "#{gse.message}: #{file}"
+        log.error "#{gse.message}: #{file}"
       end
     end
   end
@@ -220,12 +220,12 @@ date = time.strftime("%d%m%Y")
 FileUtils.mkpath("#{dir}/logs/#{date}") unless File.exists? "#{dir}/logs/#{date}"
 
 log = Logger.new("#{dir}/logs/#{date}/karyotype-resource.log")
-log.datetime_format = "%M"
+#log.datetime_format = "%M"
 log.level = Logger::INFO
 Cytogenetics.logger = log
 
 
 mitelman(dir, log)
-#ncbi_skyfish(dir, log)
-#cambridge(dir, log)
-#nci_fcrf(dir, log)
+ncbi_skyfish(dir, log)
+cambridge(dir, log)
+nci_fcrf(dir, log)
