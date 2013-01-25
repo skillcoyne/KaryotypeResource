@@ -18,6 +18,7 @@ CREATE TABLE `karyotype_source` (
   `source_short` varchar(12) NOT NULL,
   `url` text,
   `description` text,
+  `date_accessed` DATETIME NOT NULL
   PRIMARY KEY(`source_id`)
 );
 

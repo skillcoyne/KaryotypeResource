@@ -71,6 +71,8 @@ def cancer_name(cancer)
 end
 
 def mitelman(dir, log)
+  time_accessed = File.ctime("#{dir}/mitelman/mm-kary_cleaned.txt").strftime("%Y-%m-%d")
+
   File.open("#{dir}/mitelman/mm-kary_cleaned.txt", 'r').each_with_index do |line, i|
     line.chomp!
     next if line.start_with? "#"
@@ -81,7 +83,7 @@ def mitelman(dir, log)
     begin
       create_karyotype_record(:karyotype => karyotype, :cancer => cancer_name(morph),
                               :source => KaryotypeSource.where("source_short = ?", 'mitelman').first,
-                              :source_type => 'patient')
+                              :source_type => 'patient', :date => time_accessed)
     rescue Cytogenetics::StructureError => gse
       log.error("#{gse.message}: Mitelman line #{i}")
       #rescue => error
@@ -94,6 +96,7 @@ end
 
 def cambridge(dir, log)
   camdir = "#{dir}/path.cam.ac.uk"
+  time_accessed = File.ctime("#{camdir}").strftime("%Y-%m-%d")
 
   Dir.foreach(camdir) do |tissuedir|
     next if tissuedir.start_with?(".")
@@ -117,7 +120,7 @@ def cambridge(dir, log)
         begin
           kid = create_karyotype_record(:karyotype => karyotype, :cancer => tissuedir,
                                         :source => KaryotypeSource.where("source_short = ?", 'cam').first,
-                                        :source_type => 'cell line')
+                                        :source_type => 'cell line', :date => time_accessed)
 
           k = Karyotypes.find(kid)
           k.cell_line_id = cl.id
@@ -133,6 +136,7 @@ end
 
 def ncbi_skyfish(dir, log)
   esidir = "#{dir}/ESI/karyotype"
+  time_accessed = File.ctime("#{esidir}").strftime("%Y-%m-%d")
   Dir.foreach(esidir) do |entry|
     file = "#{esidir}/#{entry}"
     next if entry.start_with?(".")
@@ -156,7 +160,7 @@ def ncbi_skyfish(dir, log)
         begin
           kid = create_karyotype_record(:karyotype => karyotype, :cancer => cancer_name(diag),
                                         :source => KaryotypeSource.where("source_short = ?", 'ncbi').first,
-                                        :source_type => source_type)
+                                        :source_type => source_type, :date => time_accessed)
           unless cl.nil?
             k = Karyotypes.find(kid)
             k.cell_line_id = cl.cell_line_id
@@ -176,6 +180,7 @@ end
 
 def nci_fcrf(dir, log)
   crfdir = "#{dir}/ncifcrf"
+  time_accessed = File.ctime("#{crfdir}").strftime("%Y-%m-%d")
 
   Dir.foreach(crfdir) do |tissuedir|
     next if tissuedir.start_with?(".")
@@ -199,7 +204,7 @@ def nci_fcrf(dir, log)
       begin
         kid = create_karyotype_record(:karyotype => karyotype, :cancer => tissuedir,
                                       :source => KaryotypeSource.where("source_short = ?", 'ncifnl').first,
-                                      :source_type => 'cell line')
+                                      :source_type => 'cell line', :date => time_accessed)
 
         k = Karyotypes.find(kid)
         k.cell_line_id = cl.cell_line_id

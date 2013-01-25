@@ -1,26 +1,24 @@
-# This file should contain all the record creation needed to seed the database with its default values.
-# The data can then be loaded with the rake db:seed (or created alongside the db with db:setup).
-#
-# Examples:
-#
-#   cities = City.create([{ name: 'Chicago' }, { name: 'Copenhagen' }])
-#   Mayor.create(name: 'Emanuel', city: cities.first)
+
 
 KaryotypeSource.create([{source: 'Mitelman',
                          source_short: 'mitelman',
                          url: 'http://cgap.nci.nih.gov/Chromosomes/Mitelman',
-                         description: 'Mitelman Database of Chromosome Aberrations and Gene Fusions in Cancer'},
+                         description: 'Mitelman Database of Chromosome Aberrations and Gene Fusions in Cancer',
+                         date_accessed: '2012-11-26'},
                         {source: 'NCBI SKY-FISH',
                          source_short: 'ncbi',
                          url: 'http://www.ncbi.nlm.nih.gov/sky/',
-                         description: 'SKY/FISH public data'},
+                         description: 'SKY/FISH public data',
+                         date_accessed: '2012-11-12'},
                         {source: 'University of Cambridge CGP',
                          source_short: 'cam',
                          url: 'http://www.path.cam.ac.uk/~pawefish/',
-                         description: 'SKY Karyotypes and FISH analysis of Epithelial Cancer Cell Lines'},
+                         description: 'SKY Karyotypes and FISH analysis of Epithelial Cancer Cell Lines',
+                         date_accessed: '2012-10-22'},
                         {source: 'NCI Fredrick National Laboratory',
                          source_short: 'ncifnl',
                          url: 'http://home.ncifcrf.gov/CCR/60SKY/new/demo1.asp',
-                         description: 'SKY Karyotype of NCI60 cell lines'}])
+                         description: 'SKY Karyotype of NCI60 cell lines',
+                         date_accessed: '2013-01-16'}])
 
 
