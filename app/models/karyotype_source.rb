@@ -1,7 +1,7 @@
 class KaryotypeSource < ActiveRecord::Base
-  set_table_name 'karyotype_source'
+  self.table_name = 'karyotype_source'
 
-  has_many :karyotypeses
+  has_many :karyotypes
 
-  # attr_accessible :title, :body
+
 end

@@ -1,0 +1,26 @@
+<% @title = @cancer.name %>
+
+<% if @karyotype_by_source.keys.length > 1 %>
+    <% @karyotype_by_source.keys.each do |s| %>
+        | <%= link_to s.source, :anchor => s.source %> |
+    <% end %>
+    <p></p>
+<% end %>
+
+<h5>Total karyotypes: <%= @cancer.karyotypes.length %></h5>
+
+<% @karyotype_by_source.each_pair do |s, karyotypes| %>
+    <% @source = s %>
+    <h3><%= render :partial => "karyotype/source" %></h3>
+    <table>
+      <% karyotypes.each do |k| %>
+          <tr>
+            <td>
+              <% @karyotype = k %>
+              <%= render :partial => "karyotype/karyotype" %>
+            </td>
+          </tr>
+      <% end %>
+    </table>
+<% end %>
+

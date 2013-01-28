@@ -1,0 +1,60 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Cancer Karyotypes</title>
+  <%= stylesheet_link_tag "andreas01", :media => "all" %>
+
+  <%= csrf_meta_tags %>
+</head>
+<body>
+<a id="top"></a>
+
+<div id="wrap">
+
+  <%= render :partial => "layouts/header" %>
+  <hr>
+  <p></p>
+
+
+  <div id="leftside">
+    <h2 class="hide">Menu:</h2>
+
+    <ul class="avmenu">
+      <li><%= link_to "Cancer Karyotypes", "/" %>
+        <ul>
+          <li><%= link_to "Breakpoints", "/karyotype/breakpoint" %></li>
+          <li><%= link_to "Cancers", "/karyotype/cancer" %></li>
+          <li><%= link_to "Cell Lines", "/karyotype/cell_line" %></li>
+          <li><a href="/karyotypes/funding">Acknowledgements</a></li>
+        </ul>
+      </li>
+      <!--
+      <li><a>Additional Information</a>
+        <ul>
+          <li><a href="/informatics/publications">Publications</a></li>
+
+          <li><a href="/informatics/contact">Contact Us</a></li>
+        </ul>
+      </li>-->
+    </ul>
+    </p>
+    <p>
+      <%= render :partial => "layouts/breadcrumbs" %>
+    </p>
+    <p>
+      <%= render :partial => "layouts/statistics" %>
+    </p>
+
+  </div>
+
+  <div id="contentwide">
+    <% content_title = @title %>
+    <h2><%= content_title %></h2>
+      <%= yield %>
+    </div>
+
+  <%= render :partial => "layouts/footer" %>
+
+</div>
+</body>
+</html>

@@ -17,7 +17,7 @@ def create_karyotype_record(args)
 
   kt = Cytogenetics.karyotype(karyotype)
 
-  ktmodel = Karyotypes.create(:karyotype => karyotype, :source_id => source.source_id, :source_type => source_type)
+  ktmodel = Karyotype.create(:karyotype => karyotype, :source_id => source.id, :source_type => source_type)
 
   cnc = Cancer.where(:cancer => cancer).first
   if cnc.nil?
@@ -28,29 +28,29 @@ def create_karyotype_record(args)
   CancerKaryotype.create(:karyotype_id => ktmodel.id, :cancer_id => cnc.id)
 
   kt.report_breakpoints.each do |bp|
-    bps = Breakpoints.where(:breakpoint => bp.to_s).first
+    bps = Breakpoint.where(:breakpoint => bp.to_s).first
     if bps.nil?
-      bps = Breakpoints.new
+      bps = Breakpoint.new
       bps.breakpoint = bp.to_s
       bps.save
     end
 
     bpk = BreakpointKaryotype.new
-    bpk.breakpoint_id = bps.breakpoint_id
+    bpk.breakpoint_id = bps.id
     bpk.karyotype_id = ktmodel.id
     bpk.save
   end
 
   kt.aberrations.each_pair do |ab_class, aberrations|
     aberrations.each do |a|
-      abr = Aberrations.where(:aberration => a, :aberration_class => ab_class).first
+      abr = Aberration.where(:aberration => a, :aberration_class => ab_class).first
       if abr.nil?
-        abr = Aberrations.new
+        abr = Aberration.new
         abr.aberration_class = ab_class
         abr.aberration = a
         abr.save
       end
-      KaryotypeAberration.create(:karyotype_id => ktmodel.id, :aberration_id => abr.aberration_id)
+      KaryotypeAberration.create(:karyotype_id => ktmodel.id, :aberration_id => abr.id)
     end
   end
 
@@ -122,7 +122,7 @@ def cambridge(dir, log)
                                         :source => KaryotypeSource.where("source_short = ?", 'cam').first,
                                         :source_type => 'cell line', :date => time_accessed)
 
-          k = Karyotypes.find(kid)
+          k = Karyotype.find(kid)
           k.cell_line_id = cl.id
           k.save
 
@@ -162,7 +162,7 @@ def ncbi_skyfish(dir, log)
                                         :source => KaryotypeSource.where("source_short = ?", 'ncbi').first,
                                         :source_type => source_type, :date => time_accessed)
           unless cl.nil?
-            k = Karyotypes.find(kid)
+            k = Karyotype.find(kid)
             k.cell_line_id = cl.cell_line_id
             k.save
           end
@@ -206,7 +206,7 @@ def nci_fcrf(dir, log)
                                       :source => KaryotypeSource.where("source_short = ?", 'ncifnl').first,
                                       :source_type => 'cell line', :date => time_accessed)
 
-        k = Karyotypes.find(kid)
+        k = Karyotype.find(kid)
         k.cell_line_id = cl.cell_line_id
         k.save
 

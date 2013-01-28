@@ -4,56 +4,67 @@ CREATE DATABASE `cancer_karyotypes`;
 USE `cancer_karyotypes`;
 
 CREATE TABLE `karyotypes` (
-  `karyotype_id` int(11) NOT NULL AUTO_INCREMENT,
-  `source_id` int(11) NOT NULL,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `karyotype_source_id` int(11) NOT NULL,
   `source_type` ENUM('patient', 'cell line') NOT NULL,
   `karyotype` text NOT NULL,
   `cell_line_id` int(11),
+  `descriptions` TEXT,
+  `karyotype_count` int(11) NOT NULL,
   PRIMARY KEY (`karyotype_id`)
 );
 
 CREATE TABLE `karyotype_source` (
-  `source_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `source` varchar(112) NOT NULL,
   `source_short` varchar(12) NOT NULL,
   `url` text,
   `description` text,
   `date_accessed` DATETIME NOT NULL
-  PRIMARY KEY(`source_id`)
+  PRIMARY KEY(`id`, `source`)
 );
 
 CREATE TABLE `cancer` (
-  `cancer_id` int(11) NOT NULL AUTO_INCREMENT,
-  `cancer` text NOT NULL,
-  PRIMARY KEY(`cancer_id`)
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` text NOT NULL,
+  PRIMARY KEY(`id`, `name`)
 );
 
-CREATE TABLE `cancer_karyotype` (
+CREATE TABLE `cancers_karyotypes` (
   `karyotype_id` int(11) NOT NULL,
-  `cancer_id` int(11) NOT NULL
+  `cancer_id` int(11) NOT NULL,
+  PRIMARY KEY(`karyotype_id`, `cancer_id`),
+  foreign key (karyotype_id) references karyotypes(id),
+  foreign key (cancer_id)  references cancer(id)
 );
 
 CREATE TABLE `breakpoints` (
-  `breakpoint_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `breakpoint` varchar(32) NOT NULL,
   PRIMARY KEY (`breakpoint_id`)
 );
 
-CREATE TABLE `breakpoint_karyotype` (
+CREATE TABLE `breakpoints_karyotypes` (
   `breakpoint_id` int(11) NOT NULL,
-  `karyotype_id` int(11) NOT NULL
+  `karyotype_id` int(11) NOT NULL,
+  PRIMARY KEY(`breakpoint_id`, `karyotype_id`),
+    foreign key(`breakpoint_id`) references breakpoints(id)
+    foreign key(`karyotype_id`) references karyotypes(id)
 );
 
 CREATE TABLE `aberrations` (
-  `aberration_id` int(11) NOT NULL AUTO_INCREMENT,
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `aberration_class` varchar(32) NOT NULL,
   `aberration` text NOT NULL,
   PRIMARY KEY (`aberration_id`)
 );
 
-CREATE TABLE `karyotype_aberration` (
+CREATE TABLE `abberations_karyotypes` (
   `karyotype_id` int(11) NOT NULL,
-  `aberration_id` int(11) NOT NULL
+  `aberration_id` int(11) NOT NULL,
+    PRIMARY KEY(`aberration_id`, `karyotype_id`),
+    foreign key(`aberration_id`) references aberrations(id)
+    foreign key(`karyotype_id`) references karyotypes(id)
 );
 
 CREATE TABLE `cancer_lookup` (
@@ -62,16 +73,19 @@ CREATE TABLE `cancer_lookup` (
 );
 
 CREATE TABLE `cell_lines` (
-  `cell_line_id` int(11) NOT NULL AUTO_INCREMENT,
-  `cell_line` varchar(32) NOT NULL,
-  PRIMARY KEY(`cell_line_id`)
+  `id` int(11) NOT NULL AUTO_INCREMENT,
+  `name` varchar(32) NOT NULL,
+  `description` TEXT,
+  PRIMARY KEY(`id`, `name`)
 );
 
 CREATE TABLE `chromosome_bands` (
+  `id` int(11) NOT NULL AUTO_INCREMENT,
   `chromosome` varchar(12) NOT NULL,
   `band` varchar(12) NOT NULL,
   `start` int(112) NOT NULL,
-  `end` int(112) NOT NULL
+  `end` int(112) NOT NULL,
+  PRIMARY KEY(`id`, `chromosome`, `band`)
 );
 
 

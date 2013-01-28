@@ -1,0 +1,10 @@
+<% @title = @cell_line.name %>
+
+<h4>About:</h4>
+<%= @cell_line.description || "Coming soon." %>
+
+<h4>Karyotype:
+  <a href="<%= @cell_line.karyotype.karyotype_source.url %>" target="_new">
+  <%= @cell_line.karyotype.karyotype_source.source %></a></h4>
+<%= @cell_line.karyotype.karyotype %>
+

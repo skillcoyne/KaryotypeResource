@@ -1,0 +1,13 @@
+<% @title = "Karyotyped Cell Lines" %>
+
+<table>
+  <thead>Cell Line</thead>
+  <thead>Description</thead>
+<% @cell_lines.each do |cl| %>
+<tr>
+  <td> <%=  cl.name %> </td>
+  <td> <%= cl.description %> </td>
+</tr>
+
+<% end %>
+</table>

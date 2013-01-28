@@ -1,0 +1,16 @@
+
+<table>
+  <tr>
+
+    <td colspan="2"><b>
+      Statistics:<br>
+        <%= @count %> Karyotypes</b>
+    </td>
+  </tr>
+  <% @sources.each do |s| %>
+      <tr>
+        <td><a href="<%= s.url %>" target="_new">  <%= s.source %> </a></td>
+        <td> <%=  link_to s.karyotype_count, :controller => 'karyotype/data_source', :action => 'show', :id => s.id %> </td>
+      </tr>
+  <% end %>
+</table>

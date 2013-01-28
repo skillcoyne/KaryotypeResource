@@ -1,0 +1,7 @@
+<% @title = "Cancers" %>
+
+<% @cancers.each do |c| %>
+<ul>
+  <li> <%= link_to c.name, :controller => "karyotype/cancer", :action => "show", :id => c.name %> </li>
+</ul>
+<% end %>

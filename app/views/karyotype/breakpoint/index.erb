@@ -1,0 +1,21 @@
+<% @title = "Karyotype Breakpoints" %>
+
+<table>
+  <tr>
+    <th>Chromosome</th>
+    <th>Breakpoint</th>
+    <th>Count</th>
+
+  </tr>
+<% @breakpoints.reverse.each do |bp| %>
+<tr>
+  <td> <%= bp.chromosome %>  </td>
+  <td> <%= link_to bp.breakpoint, :controller => 'karyotype/breakpoint', :action => 'show', :id => bp.breakpoint %></a>
+
+    </td>
+  <td> <%= bp.karyotypes.length %> </td>
+
+</tr>
+
+<% end %>
+</table>

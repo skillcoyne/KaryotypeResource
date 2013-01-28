@@ -1,4 +1,4 @@
 class CancerLookup < ActiveRecord::Base
-  set_table_name 'cancer_lookup'
-  #attr_accessible :name, :translation
+  self.table_name = 'cancer_lookup'
+
 end

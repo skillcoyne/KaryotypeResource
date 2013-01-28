@@ -1,0 +1,10 @@
+<table width="100%">
+  <tr>
+    <td valign="top" width="50%">
+      <%= @karyotype.description %>
+    </td>
+    <td valign="top" width="50%">
+      <%= link_to @karyotype.karyotype, :controller => "karyotype/data_source", :action => "show", :id => @karyotype.id %>
+    </td>
+  </tr>
+</table>

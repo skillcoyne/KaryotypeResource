@@ -6,8 +6,11 @@ gem 'rails', '3.2.11'
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
 gem 'mysql2'
-gem 'cytogenetics'
-gem 'mongrel'
+gem 'cytogenetics', '>= 0.0.4'
+
+#gem 'mongrel', '>= 1.2.0.pre2'
+gem 'thin'
+gem 'dispatcher'
 
 # Gems used only for assets and not required
 # in production environments by default.

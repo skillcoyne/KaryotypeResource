@@ -1,6 +1,6 @@
 require 'test_helper'
 
-class BreakpointsTest < ActiveSupport::TestCase
+class KaryotypeTest < ActiveSupport::TestCase
   # test "the truth" do
   #   assert true
   # end
