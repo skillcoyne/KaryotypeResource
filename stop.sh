@@ -1,1 +1,1 @@
-mongrel_rails stop
+thin stop
