@@ -1,20 +1,5 @@
-<% @title = "Karyotype Information" %>
-
-<h4>Downloaded from:</h4>
-<%= link_to @karyotype.karyotype_source.description, @karyotype.karyotype_source.url, :target => '_new' %>, <%= @karyotype.karyotype_source.date_accessed %>
-
-<h4>Description:</h4>
-Cancer:
-<% @karyotype.cancers.each_with_index do |c, i| %>
-    <%= link_to c.name, :controller => "karyotype/cancer", :action => "show", :id => c.name %><% if i<@karyotype.cancers.length-1 %>,<% end %>
+<% if @karyotype %>
+    <%= render "karyotype/data_source/show_karyotype" %>
+<% elsif @source %>
+    <%= render "karyotype/data_source/show_source" %>
 <% end %>
-<br>
-<%= @karyotype.description %>
-
-<% if @karyotype.cell_line %>
-    <h4>Cell Line:</h4>
-    <%= @karyotype.cell_line.name %>: <%= @karyotype.cell_line.description %>
-<% end %>
-
-<h4>Karyotype:</h4>
-<%= @karyotype.karyotype %>

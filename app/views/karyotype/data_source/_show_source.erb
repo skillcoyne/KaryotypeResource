@@ -1,0 +1,55 @@
+<% @title = @source.source %>
+
+<%= render :partial => "karyotype/link_source" %>
+
+<p></p>
+
+<%= link_to "#{@source.karyotype_count} karyotypes", :controller => "karyotype/data_source", :action => "show", :id => @source.id %>  available.
+<p></p>
+
+<table>
+  <td>
+
+    <% unless @cancers.empty? %>
+        <td valign="top">
+          <h4>Cancers karyotyped:</h4>
+          <table>
+            <tr>
+              <td>
+                <% @cancers.each_with_index do |c, i| %>
+
+                    <li>
+                      <%= link_to c.name, :controller => "karyotype/cancer", :action => "show", :id => c.name %>
+                    </li>
+
+                <% end %>
+              </td>
+            </tr>
+
+          </table>
+        </td>
+    <% end %>
+
+
+
+    <% unless @cell_lines.empty? %>
+      <td valign="top">
+          <h4>Cell lines karyotyped:</h4>
+          <table>
+            <tr>
+              <td>
+                <% @cell_lines.sort.each_with_index do |cl, i| %>
+                    <% @cell_line = cl %>
+                    <li>
+                      <%= render :partial => "karyotype/link_cell_line" %>
+                    </li>
+                <% end %>
+              </td>
+            </tr>
+          </table>
+        </td>
+    <% end %>
+
+  </tr>
+
+</table>

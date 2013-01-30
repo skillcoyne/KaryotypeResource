@@ -1,0 +1,3 @@
+<%= link_to @cell_line.name, :controller => "karyotype/cell_line", :action => "show", :id => @cell_line.name %>
+<% if @cell_line.description %>, <%= @cell_line.description %><% end %>
+

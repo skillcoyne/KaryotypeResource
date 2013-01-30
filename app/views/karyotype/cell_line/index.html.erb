@@ -1,13 +1,12 @@
 <% @title = "Karyotyped Cell Lines" %>
 
 <table>
-  <thead>Cell Line</thead>
-  <thead>Description</thead>
-<% @cell_lines.each do |cl| %>
-<tr>
-  <td> <%=  cl.name %> </td>
-  <td> <%= cl.description %> </td>
-</tr>
-
-<% end %>
+  <tr>
+    <td>
+      <% @cell_lines.each do |cl| %>
+          <% @cell_line = cl %>
+          <li><%= render :partial => "karyotype/link_cell_line" %></li>
+      <% end %>
+    </td>
+  </tr>
 </table>

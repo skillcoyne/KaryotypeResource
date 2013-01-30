@@ -18,7 +18,7 @@ KaryotypeSource.create([{source: 'Mitelman',
                         {source: 'NCI Fredrick National Laboratory',
                          source_short: 'ncifnl',
                          url: 'http://home.ncifcrf.gov/CCR/60SKY/new/demo1.asp',
-                         description: 'SKY Karyotype of NCI60 cell lines',
+                         description: 'SKY Karyotypes of NCI60 cell lines',
                          date_accessed: '2013-01-16', karyotype_count: 0}])
 
 

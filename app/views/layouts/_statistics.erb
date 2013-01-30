@@ -10,7 +10,7 @@
   <% @sources.each do |s| %>
       <tr>
         <td><a href="<%= s.url %>" target="_new">  <%= s.source %> </a></td>
-        <td> <%=  link_to s.karyotype_count, :controller => 'karyotype/data_source', :action => 'show', :id => s.id %> </td>
+        <td> <%=  link_to s.karyotype_count, :controller => 'karyotype/data_source', :action => 'show', :id => s.source_short %> </td>
       </tr>
   <% end %>
 </table>

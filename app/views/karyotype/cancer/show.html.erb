@@ -11,7 +11,7 @@
 
 <% @karyotype_by_source.each_pair do |s, karyotypes| %>
     <% @source = s %>
-    <h3><%= render :partial => "karyotype/source" %></h3>
+    <h3><%= render :partial => "karyotype/link_source" %></h3>
     <table>
       <% karyotypes.each do |k| %>
           <tr>
