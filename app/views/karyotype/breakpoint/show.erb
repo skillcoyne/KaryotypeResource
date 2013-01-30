@@ -1,21 +1,22 @@
 <% @breakpoints.each do |bp| %>
-    <h3><%= bp.breakpoint %></h3>
+    <h2><%= bp.breakpoint %></h2>
+    <b>Found in <%= bp.karyotypes.length %> karyotypes.</b>
     <table border=1>
       <tr align="left">
         <th>Type</th>
-        <td>Data Source</td>
+        <th>Data Source</th>
         <th>Karyotype</th>
       </tr>
       <% bp.karyotypes.each do |k| %>
           <tr>
-            <td>
+            <td width="15%">
               <% unless k.cell_line_id.nil? %>
                   <%= link_to k.cell_line.name, :controller => 'karyotype/cell_line', :action => 'show', :id => k.cell_line_id %>
               <% else %>
                   <%= k.source_type.capitalize %>
               <% end %>
             </td>
-            <td><a href="<%= k.karyotype_source.url %>" target="_new"> <%= k.karyotype_source.source %> </a></td>
+            <td width="20%"><a href="<%= k.karyotype_source.url %>" target="_new"> <%= k.karyotype_source.source %> </a></td>
             <td> <%= k.karyotype %> </td>
           </tr>
       <% end %>
