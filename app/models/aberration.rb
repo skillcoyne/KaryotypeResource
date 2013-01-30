@@ -1,7 +1,6 @@
 class Aberration < ActiveRecord::Base
   self.table_name = 'aberrations'
 
-  belongs_to :karyotype_aberration
-
+  has_and_belongs_to_many :karyotypes
 
 end

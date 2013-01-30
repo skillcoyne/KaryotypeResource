@@ -4,21 +4,39 @@ KaryotypeSource.create([{source: 'Mitelman',
                          source_short: 'mitelman',
                          url: 'http://cgap.nci.nih.gov/Chromosomes/Mitelman',
                          description: 'Mitelman Database of Chromosome Aberrations and Gene Fusions in Cancer',
-                         date_accessed: '2012-11-26'},
+                         date_accessed: '2012-11-26', karyotype_count: 0},
                         {source: 'NCBI SKY-FISH',
                          source_short: 'ncbi',
                          url: 'http://www.ncbi.nlm.nih.gov/sky/',
                          description: 'SKY/FISH public data',
-                         date_accessed: '2012-11-12'},
+                         date_accessed: '2012-11-12', karyotype_count: 0},
                         {source: 'University of Cambridge CGP',
                          source_short: 'cam',
                          url: 'http://www.path.cam.ac.uk/~pawefish/',
                          description: 'SKY Karyotypes and FISH analysis of Epithelial Cancer Cell Lines',
-                         date_accessed: '2012-10-22'},
+                         date_accessed: '2012-10-22', karyotype_count: 0},
                         {source: 'NCI Fredrick National Laboratory',
                          source_short: 'ncifnl',
                          url: 'http://home.ncifcrf.gov/CCR/60SKY/new/demo1.asp',
                          description: 'SKY Karyotype of NCI60 cell lines',
-                         date_accessed: '2013-01-16'}])
+                         date_accessed: '2013-01-16', karyotype_count: 0}])
 
 
+File.open("#{Dir.pwd}/db/cell_lines.txt", 'r').each do |line|
+  line.chomp!
+  CellLine.create(:name => line)
+end
+
+File.open("#{Dir.pwd}/db/chromosome_bands.txt", 'r').each do |line|
+  line.chomp!
+  next if line.length <= 0 or line.eql?("") or line.start_with?"#"
+  (chr, band, start, stop) = line.split("\t")
+  ChromosomeBands.create(:chromosome => chr.strip, :band => band.strip, :start => start.strip, :end => stop.strip)
+end
+
+File.open("#{Dir.pwd}/db/cancer_lookup.txt", 'r').each do |line|
+  line.chomp!
+  next if line.length <= 0 or line.eql?("")
+  (name, translation) = line.split(",")
+  CancerLookup.create(:name => name.strip, :translation => translation.strip)
+end

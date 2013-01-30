@@ -5,6 +5,8 @@ class Breakpoint < ActiveRecord::Base
 
   has_and_belongs_to_many :karyotypes
 
+
+
   def chromosome
     m = self.breakpoint.match(/(\d+|X|Y)([q|p]\d+.*)/)
     return m.captures.first

@@ -10,51 +10,32 @@ require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
 
 
 def create_karyotype_record(args)
-  karyotype = args[:karyotype]
-  source = args[:source]
-  source_type = args[:source_type]
   cancer = args[:cancer]
+  args.delete(:cancer)
 
-  kt = Cytogenetics.karyotype(karyotype)
+  kt = Cytogenetics.karyotype(args[:karyotype])
 
-  ktmodel = Karyotype.create(:karyotype => karyotype, :source_id => source.id, :source_type => source_type)
+  ktmodel = Karyotype.create(args)
+  if ktmodel
+    KaryotypeSource.increment_counter(:karyotype_count, args[:karyotype_source_id])
+    ktmodel.cancers << Cancer.find_or_create_by_name(cancer)
 
-  cnc = Cancer.where(:cancer => cancer).first
-  if cnc.nil?
-    cnc = Cancer.new
-    cnc.cancer = cancer
-    cnc.save
-  end
-  CancerKaryotype.create(:karyotype_id => ktmodel.id, :cancer_id => cnc.id)
-
-  kt.report_breakpoints.each do |bp|
-    bps = Breakpoint.where(:breakpoint => bp.to_s).first
-    if bps.nil?
-      bps = Breakpoint.new
-      bps.breakpoint = bp.to_s
-      bps.save
+    kt.report_breakpoints.each do |bp|
+      bp = Breakpoint.find_or_create_by_breakpoint(bp.to_s)
+      ktmodel.breakpoints << bp
     end
 
-    bpk = BreakpointKaryotype.new
-    bpk.breakpoint_id = bps.id
-    bpk.karyotype_id = ktmodel.id
-    bpk.save
-  end
-
-  kt.aberrations.each_pair do |ab_class, aberrations|
-    aberrations.each do |a|
-      abr = Aberration.where(:aberration => a, :aberration_class => ab_class).first
-      if abr.nil?
-        abr = Aberration.new
-        abr.aberration_class = ab_class
-        abr.aberration = a
-        abr.save
+    kt.aberrations.each_pair do |ab_class, aberrations|
+      aberrations.each do |a|
+        abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)
+        ktmodel.aberrations << abr
       end
-      KaryotypeAberration.create(:karyotype_id => ktmodel.id, :aberration_id => abr.id)
     end
+    ktmodel.save
+  else
+    puts "**** Failed to create karyotype record for #{args.inspect}"
   end
 
-  return ktmodel.id
 end
 
 def cancer_name(cancer)
@@ -73,6 +54,8 @@ end
 def mitelman(dir, log)
   time_accessed = File.ctime("#{dir}/mitelman/mm-kary_cleaned.txt").strftime("%Y-%m-%d")
 
+  ks = KaryotypeSource.where(:source_short => 'mitelman').first
+
   File.open("#{dir}/mitelman/mm-kary_cleaned.txt", 'r').each_with_index do |line, i|
     line.chomp!
     next if line.start_with? "#"
@@ -82,14 +65,10 @@ def mitelman(dir, log)
 
     begin
       create_karyotype_record(:karyotype => karyotype, :cancer => cancer_name(morph),
-                              :source => KaryotypeSource.where("source_short = ?", 'mitelman').first,
-                              :source_type => 'patient', :date => time_accessed)
+                              :karyotype_source_id => ks.id, :source_type => 'patient',
+                              :description => "#{morph}, Reference: #{refno}, Case: #{caseno}")
     rescue Cytogenetics::StructureError => gse
       log.error("#{gse.message}: Mitelman line #{i}")
-      #rescue => error
-      #  log.error("Failed to parse karyotype from Mitelman line #{i}: #{error.message}")
-      #  log.error(error.backtrace)
-      #  puts error.backtrace
     end
   end
 end
@@ -97,6 +76,8 @@ end
 def cambridge(dir, log)
   camdir = "#{dir}/path.cam.ac.uk"
   time_accessed = File.ctime("#{camdir}").strftime("%Y-%m-%d")
+
+  ks = KaryotypeSource.where(:source_short => 'cam').first
 
   Dir.foreach(camdir) do |tissuedir|
     next if tissuedir.start_with?(".")
@@ -107,10 +88,7 @@ def cambridge(dir, log)
       next if entry.eql? "url.txt"
       file = "#{camdir}/#{tissuedir}/#{entry}"
 
-      cl = CellLine.where(:cell_line => entry.sub(/\..*./, "")).first
-      if cl.nil?
-        cl = CellLine.create(:cell_line => entry.sub(/\..*./, ""))
-      end
+      cl = CellLine.find_or_create_by_name(entry.sub(/\..*./, ""))
 
       log.info "Reading #{file}..."
       File.open(file, 'r').each_line do |karyotype|
@@ -118,16 +96,11 @@ def cambridge(dir, log)
         next if karyotype.length <= 1
 
         begin
-          kid = create_karyotype_record(:karyotype => karyotype, :cancer => tissuedir,
-                                        :source => KaryotypeSource.where("source_short = ?", 'cam').first,
-                                        :source_type => 'cell line', :date => time_accessed)
-
-          k = Karyotype.find(kid)
-          k.cell_line_id = cl.id
-          k.save
-
+          create_karyotype_record(:karyotype => karyotype, :cancer => tissuedir,
+                                  :karyotype_source_id => ks.id, :cell_line_id => cl.id,
+                                  :source_type => 'cell line')
         rescue Cytogenetics::StructureError => gse
-          log.error( "#{gse.message}: #{file}")
+          log.error("#{gse.message}: #{file}")
         end
       end
     end
@@ -137,50 +110,51 @@ end
 def ncbi_skyfish(dir, log)
   esidir = "#{dir}/ESI/karyotype"
   time_accessed = File.ctime("#{esidir}").strftime("%Y-%m-%d")
+
+  ks = KaryotypeSource.where(:source_short => 'ncbi').first
+
   Dir.foreach(esidir) do |entry|
     file = "#{esidir}/#{entry}"
     next if entry.start_with?(".")
     next if File.directory?(file)
 
-    File.open("#{esidir}/#{entry}", 'r').each_with_index do |line, i|
+    File.open(file, 'r').each_with_index do |line, i|
       next if i.eql? 0
-      line.chomp!
+      log.info "Reading #{file} karyotype #{i}"
+      line.strip!
 
+      line.gsub!(/\r|\n/, "")
       (kcase, diag, stage, karyotypes) = line.split("\t")
+      next if kcase.match(/mouse/)
 
       source_type = "patient"
       if entry.match("^NCI60")
         source_type = "cell line"
-        cl = CellLine.where(:cell_line => kcase).first
+        cl_name = kcase[0..kcase.index("(")-1]
+        cl_name.strip!
+        cl = CellLine.where(:name => [cl_name, cl_name.sub("-", "")]).first
       end
 
-      next if kcase.match(/mouse/)
-      log.info "Reading #{file} karyotype #{i}"
       karyotypes.split(/\//).each do |karyotype|
+        puts karyotype
         begin
-          kid = create_karyotype_record(:karyotype => karyotype, :cancer => cancer_name(diag),
-                                        :source => KaryotypeSource.where("source_short = ?", 'ncbi').first,
-                                        :source_type => source_type, :date => time_accessed)
-          unless cl.nil?
-            k = Karyotype.find(kid)
-            k.cell_line_id = cl.cell_line_id
-            k.save
-          end
+          kid = create_karyotype_record(:karyotype => karyotype, :cancer => cancer_name(diag), :description => "#{kcase}: #{stage}",
+                                        :karyotype_source_id => ks.id, :source_type => source_type)
+          Karyotype.find(kid).update_attribute("cell_line_id", cl.id) unless cl.nil?
         rescue Cytogenetics::StructureError => gse
           log.error("#{gse.message}: NCBI karyotype #{entry} line #{i}")
-          #rescue => error
-          #  log.error("Failed to parse karyotype from Mitelman line #{i}: #{error.message}")
-          #  log.error(error.backtrace)
-          #  puts error.backtrace
         end
       end
     end
   end
+
 end
 
 def nci_fcrf(dir, log)
   crfdir = "#{dir}/ncifcrf"
   time_accessed = File.ctime("#{crfdir}").strftime("%Y-%m-%d")
+
+  ks = KaryotypeSource.where(:source_short => 'ncifnl').first
 
   Dir.foreach(crfdir) do |tissuedir|
     next if tissuedir.start_with?(".")
@@ -192,29 +166,22 @@ def nci_fcrf(dir, log)
       file = "#{crfdir}/#{tissuedir}/#{entry}"
 
 
-      cl = CellLine.where(:cell_line => entry.sub(/\..*./, "")).first
-      if cl.nil?
-        cl = CellLine.create(:cell_line => entry.sub(/\..*./, ""))
-      end
+      cl = CellLine.find_or_create_by_name(entry.sub(/\..*./, ""))
 
       log.info "Reading #{file}"
       karyotype = File.readlines(file).map! { |e| e.chomp! }
       karyotype = karyotype.join("")
 
       begin
-        kid = create_karyotype_record(:karyotype => karyotype, :cancer => tissuedir,
-                                      :source => KaryotypeSource.where("source_short = ?", 'ncifnl').first,
-                                      :source_type => 'cell line', :date => time_accessed)
-
-        k = Karyotype.find(kid)
-        k.cell_line_id = cl.cell_line_id
-        k.save
-
+        create_karyotype_record(:karyotype => karyotype, :cancer => tissuedir, :cell_line_id => cl.id,
+                                :karyotype_source_id => ks.id, :cell_line_id => cl.id,
+                                :source_type => 'cell line')
       rescue Cytogenetics::StructureError => gse
         log.error "#{gse.message}: #{file}"
       end
     end
   end
+
 end
 
 
@@ -224,13 +191,13 @@ date = time.strftime("%d%m%Y")
 
 FileUtils.mkpath("#{dir}/logs/#{date}") unless File.exists? "#{dir}/logs/#{date}"
 
+#log = Logger.new(STDOUT)
 log = Logger.new("#{dir}/logs/#{date}/karyotype-resource.log")
-#log.datetime_format = "%M"
 log.level = Logger::INFO
 Cytogenetics.logger = log
 
 
 mitelman(dir, log)
-ncbi_skyfish(dir, log)
-cambridge(dir, log)
-nci_fcrf(dir, log)
+#ncbi_skyfish(dir, log)
+#cambridge(dir, log)
+#nci_fcrf(dir, log)
