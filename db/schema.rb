@@ -18,6 +18,13 @@ ActiveRecord::Schema.define(:version => 0) do
     t.text   "aberration",                     :null => false
   end
 
+  create_table "aberrations_breakpoints", :force => true do |t|
+    t.integer "aberration_id", :null => false
+    t.integer "breakpoint_id", :null => false
+  end
+
+  add_index "aberrations_breakpoints", ["aberration_id", "breakpoint_id"], :name => "abbp_index"
+
   create_table "aberrations_karyotypes", :id => false, :force => true do |t|
     t.integer "karyotype_id",  :null => false
     t.integer "aberration_id", :null => false

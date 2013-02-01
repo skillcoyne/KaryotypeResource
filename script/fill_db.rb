@@ -25,6 +25,7 @@ def create_karyotype_record(args)
       ktmodel.breakpoints << bp
     end
 
+    # TODO: need to associate breakpoints with aberrations, but has to happen in the cytogenetics gem
     kt.aberrations.each_pair do |ab_class, aberrations|
       aberrations.each do |a|
         abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)

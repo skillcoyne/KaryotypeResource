@@ -61,6 +61,12 @@ CREATE TABLE `aberrations` (
   PRIMARY KEY (`id`)
 );
 
+CREATE TABLE `aberrations_breakpoints` (
+  `aberration_id` int(11) NOT NULL,
+  `breakpoint_id` int(11) NOT NULL,
+  INDEX abbp_index (`aberration_id`, `breakpoint_id`)
+);
+
 CREATE TABLE `aberrations_karyotypes` (
   `karyotype_id` int(11) NOT NULL,
   `aberration_id` int(11) NOT NULL,
