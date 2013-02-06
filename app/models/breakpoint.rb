@@ -6,6 +6,8 @@ class Breakpoint < ActiveRecord::Base
   has_and_belongs_to_many :karyotypes
   has_and_belongs_to_many :aberrations
 
+  attr_reader :startpos, :endpos
+
   def chromosome
     m = self.breakpoint.match(/(\d+|X|Y)([q|p]\d+.*)/)
     return m.captures.first
@@ -17,19 +19,15 @@ class Breakpoint < ActiveRecord::Base
 
   def band(*args)
     m = self.breakpoint.match(/(\d+|X|Y)([q|p]\d+.*)/)
-    if args[0].eql?'major'.to_sym
+    if args[0].eql? 'major'.to_sym
       m = self.breakpoint.match(/(\d+|X|Y)([q|p]\d+)/)
     end
     return m.captures.last
   end
 
   def position(*args)
-    unless ((@startpos and @endpos) and args.length.eql?0)
-      cb = ChromosomeBands.where("chromosome = ? AND band LIKE ?", self.chromosome, "%#{self.band(*args)}%").order(:start)
-      @startpos = cb.first.start
-      @endpos = cb.last.end
-    end
-    return [@startpos, @endpos]
+    cb = ChromosomeBands.find_by_chromosome_and_band(self.chromosome, "#{self.band(*args)}")
+    return [cb.start, cb.end]
   end
 
 end

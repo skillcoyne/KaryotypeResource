@@ -34,9 +34,26 @@ File.open("#{Dir.pwd}/db/chromosome_bands.txt", 'r').each do |line|
   ChromosomeBands.create(:chromosome => chr.strip, :band => band.strip, :start => start.strip, :end => stop.strip)
 end
 
+## Add major bands
+
+chrbands = ChromosomeBands.all
+chrbands.each do |cb|
+  if cb.band.match(/([q|p]\d+)\.\d+/)
+    m = cb.band.match(/([q|p]\d+)/)
+    band = m.captures.first
+    c =  ChromosomeBands.where("chromosome = ? AND band LIKE ?", cb.chromosome, "%#{band}%").order(:start)
+    ChromosomeBands.find_or_create_by_chromosome_and_band_and_start_and_end(cb.chromosome, band, c.first.start, c.last.end)
+  end
+end
+
+
+
+
 File.open("#{Dir.pwd}/db/cancer_lookup.txt", 'r').each do |line|
   line.chomp!
   next if line.length <= 0 or line.eql?("")
   (name, translation) = line.split(",")
   CancerLookup.create(:name => name.strip, :translation => translation.strip)
 end
+
+
