@@ -33,6 +33,8 @@ Diffuse large b-cell lymphoma,non-Hodgkin's lymphoma
 Dysplastic nevus,Atypical mole
 Extranodal marginal zone b-cell lymphoma,Marginal B-cell lymphoma
 Glioblastoma,Glioblastoma multiforme
+Hodgkin disease,Hodgkin's lymphoma
+Hodgkin's disease,Hodgkin's lymphoma
 Malignant peripheral nerve sheath tumor/triton,Malignant peripheral nerve sheath tumor
 Mature b-cell neoplasms (all subtypes),Mature b-cell neoplasm
 Mature t- and nk-cell neoplasm,Mature t-cell lymphoma
