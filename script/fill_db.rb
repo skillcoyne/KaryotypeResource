@@ -14,11 +14,43 @@ def create_karyotype_record(args)
   args.delete(:cancer)
 
   kt = Cytogenetics.karyotype(args[:karyotype])
+  abr_bp_hash = kt.associate_bp_to_abr
 
   ktmodel = Karyotype.create(args)
   if ktmodel
-    KaryotypeSource.increment_counter(:karyotype_count, args[:karyotype_source_id])
-    ktmodel.cancers << Cancer.find_or_create_by_name(cancer)
+    KaryotypeSource.inc
+    Cancer.find_or_create_by_name(cancer)
+
+
+    kt.aberrations.each_pair do |ab_class, aberrations|
+      aberrations.each do |a|
+        abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)
+        ktmodel.aberrations << abr
+        puts abr.id
+
+        abr_bp_hash[a].each do |bp|
+          bp = Breakpoint.find_or_create_by_breakpoint(bp.to_s)
+          ktmodel.breakpoints << bp
+
+          abr.id
+          bp.id
+        end
+
+
+      end
+    end
+
+
+    kt.associate_bp_to_abr.each_pair do |abr, bps|
+      bp = Breakpoint.find_or_create_by_breakpoint(bp.to_s)
+
+
+      abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)
+      ktmodel.aberrations << abr
+
+      ktmodel.breakpoints << bp
+    end
+
 
     kt.report_breakpoints.each do |bp|
       bp = Breakpoint.find_or_create_by_breakpoint(bp.to_s)
@@ -30,6 +62,7 @@ def create_karyotype_record(args)
       aberrations.each do |a|
         abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)
         ktmodel.aberrations << abr
+        puts abr.id
       end
     end
     ktmodel.save

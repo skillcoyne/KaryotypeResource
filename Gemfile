@@ -6,7 +6,7 @@ gem 'rails', '3.2.11'
 # gem 'rails', :git => 'git://github.com/rails/rails.git'
 
 gem 'mysql2'
-gem 'cytogenetics', '>= 0.0.4'
+gem 'cytogenetics', '>= 0.0.5'
 
 #gem 'mongrel', '>= 1.2.0.pre2'
 gem 'thin'
