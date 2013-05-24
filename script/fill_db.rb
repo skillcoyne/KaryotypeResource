@@ -18,51 +18,22 @@ def create_karyotype_record(args)
 
   ktmodel = Karyotype.create(args)
   if ktmodel
-    KaryotypeSource.inc
+    KaryotypeSource.increment_counter(:karyotype_count, args[:karyotype_source_id])
     Cancer.find_or_create_by_name(cancer)
 
-
     kt.aberrations.each_pair do |ab_class, aberrations|
-      aberrations.each do |a|
-        abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)
-        ktmodel.aberrations << abr
-        puts abr.id
+      aberrations.each do |abr|
+        abrmodel = Aberration.find_or_create_by_aberration_and_aberration_class(abr, ab_class)
+        ktmodel.aberrations << abrmodel
 
-        abr_bp_hash[a].each do |bp|
-          bp = Breakpoint.find_or_create_by_breakpoint(bp.to_s)
-          ktmodel.breakpoints << bp
+        if abr_bp_hash.has_key? abr
+          abr_bp_hash[abr].each do |bp|
+            bpmodel = Breakpoint.find_or_create_by_breakpoint(bp)
+            ktmodel.breakpoints << bpmodel
 
-          abr.id
-          bp.id
+            abrmodel.breakpoints << bpmodel
+          end
         end
-
-
-      end
-    end
-
-
-    kt.associate_bp_to_abr.each_pair do |abr, bps|
-      bp = Breakpoint.find_or_create_by_breakpoint(bp.to_s)
-
-
-      abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)
-      ktmodel.aberrations << abr
-
-      ktmodel.breakpoints << bp
-    end
-
-
-    kt.report_breakpoints.each do |bp|
-      bp = Breakpoint.find_or_create_by_breakpoint(bp.to_s)
-      ktmodel.breakpoints << bp
-    end
-
-    # TODO: need to associate breakpoints with aberrations, but has to happen in the cytogenetics gem
-    kt.aberrations.each_pair do |ab_class, aberrations|
-      aberrations.each do |a|
-        abr = Aberration.find_or_create_by_aberration_and_aberration_class(a, ab_class)
-        ktmodel.aberrations << abr
-        puts abr.id
       end
     end
     ktmodel.save
@@ -225,13 +196,15 @@ date = time.strftime("%d%m%Y")
 
 FileUtils.mkpath("#{dir}/logs/#{date}") unless File.exists? "#{dir}/logs/#{date}"
 
-#log = Logger.new(STDOUT)
 log = Logger.new("#{dir}/logs/#{date}/karyotype-resource.log")
 log.level = Logger::INFO
 Cytogenetics.logger = log
 
+parse_log = Logger.new(STDOUT)
+parse_log.level = Logger::INFO
 
-mitelman(dir, log)
-#ncbi_skyfish(dir, log)
-#cambridge(dir, log)
-#nci_fcrf(dir, log)
+
+mitelman(dir, parse_log)
+ncbi_skyfish(dir, parse_log)
+cambridge(dir, parse_log)
+nci_fcrf(dir, parse_log)
