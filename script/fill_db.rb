@@ -19,7 +19,8 @@ def create_karyotype_record(args)
   ktmodel = Karyotype.create(args)
   if ktmodel
     KaryotypeSource.increment_counter(:karyotype_count, args[:karyotype_source_id])
-    Cancer.find_or_create_by_name(cancer)
+
+    ktmodel.cancers << Cancer.find_or_create_by_name(cancer)
 
     kt.aberrations.each_pair do |ab_class, aberrations|
       aberrations.each do |abr|
