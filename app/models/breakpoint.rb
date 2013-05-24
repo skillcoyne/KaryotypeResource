@@ -27,7 +27,8 @@ class Breakpoint < ActiveRecord::Base
 
   def position(*args)
     cb = ChromosomeBands.find_by_chromosome_and_band(self.chromosome, "#{self.band(*args)}")
-    return [cb.start, cb.end]
+    return cb
+    #return [cb.start, cb.end]
   end
 
 end

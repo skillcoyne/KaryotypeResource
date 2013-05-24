@@ -37,7 +37,13 @@ def write_abr_file(abrs, filehandle)
     a.breakpoints.uniq! { |bp| bp.id }
     a.karyotypes.uniq! { |k| k.id }
 
-    filehandle.write [a.aberration_class, a.aberration, a.breakpoints.length, a.karyotypes.length].join("\t") + "\n"
+    leukemia_count = 0
+    cnc = Cancer.joins(:karyotypes).where(:karyotypes => {:id => a.karyotypes.map { |k| k.id }})
+
+    cnc.each { |c| leukemia_count += 1 if $LEUKEMIAS.index(c.name) }
+
+
+    filehandle.write [a.aberration_class, a.aberration, a.breakpoints.length, a.karyotypes.length, leukemia_count].join("\t") + "\n"
     filehandle.flush if i%10 == 0
   end
   filehandle.close
@@ -66,8 +72,11 @@ def write_breakpoints(bps, filehandle)
     patients = bp.karyotypes.select { |k| k.source_type.eql? 'patient' }.length
     cell_lines = bp.karyotypes.select { |k| k.source_type.eql? 'cell line' }.length
 
-    filehandle.write [bp.chromosome, bp.band, bp.position, patients, cell_lines, cnc.length].join("\t") + "\n"
-    filehandle.flush
+    chr_location = bp.position
+    unless chr_location.nil?
+      filehandle.write [bp.chromosome, bp.band, chr_location.start, chr_location.end, patients, cell_lines, cnc.length].join("\t") + "\n"
+      filehandle.flush
+    end
   end
   filehandle.close
 end
@@ -75,7 +84,6 @@ end
 time = Time.new
 date = time.strftime("%d%m%Y")
 
-## Pull down breakpoints by cancer, with locations
 outdir = "#{Dir.home}/Data/sky-cgh/output/#{date}"
 
 FileUtils.rm_f("#{Dir.home}/Data/sky-cgh/output/current") if File.exists?("#{Dir.home}/Data/sky-cgh/output/current")
@@ -83,21 +91,24 @@ FileUtils.symlink(outdir, "#{Dir.home}/Data/sky-cgh/output/current")
 
 FileUtils.mkpath(outdir) unless File.exists? outdir
 
+$LEUKEMIAS = ['Acute myeloid leukemia', 'Acute lymphoblastic leukemia', "Non-hodgkin's lymphoma", 'Chronic myelogenous leukemia', 'Chronic lymphocytic leukemia']
+
 # -- Cancer breakpoints -- #
-cols = ["chr", "breakpoint", "start", "end", "cancer"]
-cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'patient'})
-write_bp_cnc(cancers, get_filehandle("#{outdir}/pt-breakpoints.txt", cols))
-
-cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'cell line'})
-write_bp_cnc(cancers, get_filehandle("#{outdir}/cl-breakpoints.txt", cols))
-
-# -- Breakpoints -- #
+#cols = ["chr", "breakpoint", "start", "end", "cancer"]
+#cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'patient'})
+#write_bp_cnc(cancers, get_filehandle("#{outdir}/pt-breakpoints.txt", cols))
+#
+#cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'cell line'})
+#write_bp_cnc(cancers, get_filehandle("#{outdir}/cl-breakpoints.txt", cols))
+#
+## -- Breakpoints -- #
 write_breakpoints(Breakpoint.all, get_filehandle("#{outdir}/breakpoints.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'cancers']))
 
-# -- All known aberrations that have breakpoints -- #
-write_abr_file(Aberration.where("aberration_class != ?", 'unk'), get_filehandle("#{outdir}/aberrations.txt", ['class', 'aberration', 'breakpoints', 'karyotypes']))
-
-# -- Ploidy -- #
+## -- Ploidy -- #
 write_ploidy(Aberration.where("aberration_class IN (?,?)", 'gain', 'loss'), get_filehandle("#{outdir}/ploidy.txt", ['class', 'chromosome', 'karyotypes']))
+
+# -- All known aberrations that have breakpoints -- #
+write_abr_file(Aberration.where("aberration_class != ?", 'unk'), get_filehandle("#{outdir}/aberrations.txt", ['class', 'aberration', 'breakpoints', 'karyotypes', 'leukemias']))
+
 
 
