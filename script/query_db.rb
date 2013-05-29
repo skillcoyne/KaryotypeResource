@@ -24,7 +24,8 @@ def write_bp_cnc(cancers, filehandle)
 
     ## NOTE For now output major bands only
     bps.each do |bp|
-      filehandle.write [bp.chromosome, bp.major_breakpoint, bp.position(:major).first, bp.position(:major).last, c.name].join("\t") + "\n"
+      position = bp.position(:major)
+      filehandle.write [bp.chromosome, bp.major_breakpoint, position.start, position.end, c.name].join("\t") + "\n"
     end
   end
   filehandle.close
@@ -97,17 +98,17 @@ $LEUKEMIAS = ['Acute myeloid leukemia', 'Acute lymphoblastic leukemia', "Non-hod
 #cols = ["chr", "breakpoint", "start", "end", "cancer"]
 #cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'patient'})
 #write_bp_cnc(cancers, get_filehandle("#{outdir}/pt-breakpoints.txt", cols))
-#
+
 #cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'cell line'})
 #write_bp_cnc(cancers, get_filehandle("#{outdir}/cl-breakpoints.txt", cols))
-#
+
 ## -- Breakpoints -- #
 write_breakpoints(Breakpoint.all, get_filehandle("#{outdir}/breakpoints.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'cancers']))
 
-## -- Ploidy -- #
+### -- Ploidy -- #
 write_ploidy(Aberration.where("aberration_class IN (?,?)", 'gain', 'loss'), get_filehandle("#{outdir}/ploidy.txt", ['class', 'chromosome', 'karyotypes']))
 
-# -- All known aberrations that have breakpoints -- #
+## -- All known aberrations that have breakpoints -- #
 write_abr_file(Aberration.where("aberration_class != ?", 'unk'), get_filehandle("#{outdir}/aberrations.txt", ['class', 'aberration', 'breakpoints', 'karyotypes', 'leukemias']))
 
 
