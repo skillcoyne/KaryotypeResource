@@ -14,19 +14,20 @@ def get_filehandle(filename, cols)
   return f
 end
 
-def write_bp_cnc(cancers, filehandle)
+def write_bp_cnc(bps, filehandle)
   puts "Writing #{filehandle.path}"
-  cancers.each do |c|
-    puts "Reading #{c.name}..."
-    bps = []
-    bps << c.karyotypes.map { |k| k.breakpoints }
-    bps.flatten!
 
-    ## NOTE For now output major bands only
-    bps.each do |bp|
-      position = bp.position(:major)
-      filehandle.write [bp.chromosome, bp.major_breakpoint, position.start, position.end, c.name].join("\t") + "\n"
-    end
+  bps.each do |bp|
+    chr_location = bp.position(:major)
+
+    unless chr_location.nil?
+      patients = bp.karyotypes.select { |k| k.source_type.eql? 'patient' }.length
+      cell_lines = bp.karyotypes.select { |k| k.source_type.eql? 'cell line' }.length
+
+      filehandle.write [bp.chromosome, bp.band, chr_location.start, chr_location.end, patients, cell_lines, bp.karyotypes.length].join("\t") + "\n"
+      filehandle.flush
+      end
+
   end
   filehandle.close
 end
@@ -62,20 +63,30 @@ def write_ploidy(abrs, filehandle)
 end
 
 def write_breakpoints(bps, filehandle)
+  leukemia_ids = Cancer.where(:name => $LEUKEMIAS)
+  leukemia_ids = leukemia_ids.map{|leu| leu.id }
+
   puts "Writing #{filehandle.path}"
   puts bps.length
   bps.each do |bp|
+    puts bp.karyotypes.length
     bp.karyotypes.uniq! { |k| k.id }
+    puts bp.karyotypes.length
 
-    cnc = Cancer.joins(:karyotypes).where(:karyotypes => {:id => bp.karyotypes.map { |k| k.id }})
-    cnc.uniq! { |c| c.id }
+    # counts leukemia samples
+    leuk_count = 0
+    bp.karyotypes.each{|k|
+      k.cancers.each{|c| leuk_count += 1 if leukemia_ids.index(c.id) }
+    }
 
     patients = bp.karyotypes.select { |k| k.source_type.eql? 'patient' }.length
     cell_lines = bp.karyotypes.select { |k| k.source_type.eql? 'cell line' }.length
 
-    chr_location = bp.position
+    #chr_location = bp.position
+    chr_location = bp.position(:major)
+
     unless chr_location.nil?
-      filehandle.write [bp.chromosome, bp.band, chr_location.start, chr_location.end, patients, cell_lines, cnc.length].join("\t") + "\n"
+      filehandle.write [bp.chromosome, bp.band, chr_location.start, chr_location.end, patients, cell_lines, bp.karyotypes.length, leuk_count].join("\t") + "\n"
       filehandle.flush
     end
   end
@@ -94,22 +105,32 @@ FileUtils.mkpath(outdir) unless File.exists? outdir
 
 $LEUKEMIAS = ['Acute myeloid leukemia', 'Acute lymphoblastic leukemia', "Non-hodgkin's lymphoma", 'Chronic myelogenous leukemia', 'Chronic lymphocytic leukemia']
 
-# -- Cancer breakpoints -- #
-#cols = ["chr", "breakpoint", "start", "end", "cancer"]
-#cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'patient'})
-#write_bp_cnc(cancers, get_filehandle("#{outdir}/pt-breakpoints.txt", cols))
-
-#cancers = Cancer.joins(:karyotypes => [:breakpoints]).where(:karyotypes => {:source_type => 'cell line'})
-#write_bp_cnc(cancers, get_filehandle("#{outdir}/cl-breakpoints.txt", cols))
-
 ## -- Breakpoints -- #
-write_breakpoints(Breakpoint.all, get_filehandle("#{outdir}/breakpoints.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'cancers']))
+write_breakpoints(Breakpoint.all, get_filehandle("#{outdir}/breakpoints.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'total.samples', 'leukemia.samples']))
 
 ### -- Ploidy -- #
 write_ploidy(Aberration.where("aberration_class IN (?,?)", 'gain', 'loss'), get_filehandle("#{outdir}/ploidy.txt", ['class', 'chromosome', 'karyotypes']))
 
-## -- All known aberrations that have breakpoints -- #
+### -- All known aberrations that have breakpoints -- #
 write_abr_file(Aberration.where("aberration_class != ?", 'unk'), get_filehandle("#{outdir}/aberrations.txt", ['class', 'aberration', 'breakpoints', 'karyotypes', 'leukemias']))
+
+# -- Cancer breakpoints -- #
+cncdir = "#{outdir}/cancer_bps"
+FileUtils.mkpath(cncdir)
+
+cancers = Cancer.all
+cancers.each do |cnc|
+  puts "#{cnc.name}: #{cnc.karyotypes.length}"
+  bps = []
+  cnc.karyotypes.each do |k|
+    bps << k.breakpoints
+  end
+  bps.flatten!
+  bps.uniq!{|bp| bp.id}
+
+  write_bp_cnc(bps,get_filehandle("#{cncdir}/#{cnc.name}.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'total.samples']))
+end
+
 
 
 
