@@ -18,15 +18,15 @@ def write_bp_cnc(bps, filehandle)
   puts "Writing #{filehandle.path}"
 
   bps.each do |bp|
-    chr_location = bp.position(:major)
 
+    chr_location = bp.position(:major)
     unless chr_location.nil?
       patients = bp.karyotypes.select { |k| k.source_type.eql? 'patient' }.length
       cell_lines = bp.karyotypes.select { |k| k.source_type.eql? 'cell line' }.length
 
-      filehandle.write [bp.chromosome, bp.band, chr_location.start, chr_location.end, patients, cell_lines, bp.karyotypes.length].join("\t") + "\n"
+      filehandle.write [bp.chromosome, chr_location.band, chr_location.start, chr_location.end, patients, cell_lines, bp.karyotypes.length].join("\t") + "\n"
       filehandle.flush
-      end
+    end
 
   end
   filehandle.close
@@ -64,34 +64,47 @@ end
 
 def write_breakpoints(bps, filehandle)
   leukemia_ids = Cancer.where(:name => $LEUKEMIAS)
-  leukemia_ids = leukemia_ids.map{|leu| leu.id }
+  leukemia_ids = leukemia_ids.map { |leu| leu.id }
+
+  break_classes = ['trans', 'der', 'del', 'inv', 'dup', 'add']
+  recombine_classes = ['trans', 'der', 'add', 'inv', 'ins', 'dup']
+  #ab_objs = Cytogenetics::Aberration.aberration_objs
 
   puts "Writing #{filehandle.path}"
   puts bps.length
   bps.each do |bp|
-    puts bp.karyotypes.length
     bp.karyotypes.uniq! { |k| k.id }
-    puts bp.karyotypes.length
 
     # counts leukemia samples
     leuk_count = 0
-    bp.karyotypes.each{|k|
-      k.cancers.each{|c| leuk_count += 1 if leukemia_ids.index(c.id) }
+    bp.karyotypes.each { |k|
+      k.cancers.each { |c| leuk_count += 1 if leukemia_ids.index(c.id) }
     }
 
     patients = bp.karyotypes.select { |k| k.source_type.eql? 'patient' }.length
     cell_lines = bp.karyotypes.select { |k| k.source_type.eql? 'cell line' }.length
 
-    #chr_location = bp.position
-    chr_location = bp.position(:major)
+    breaks = 0; recombinations = 0
+    bp.aberrations.each do |a|
+      # Not sure it's at all useful to do this
+      #breaks = ab_objs[a.aberration_class.to_sym].new(a.aberration,false)
 
+      # Basically if a breakpoint shows up in one of the listed aberrations it's counted as either (or both) a breakage or a recombination
+      # This does completely ignore where it shows up in the aberration.  For instance t(11;17)(p15;q21) 11p15 will be both a break and a recombination site.
+      breaks += 1 if break_classes.index(a.aberration_class)
+      recombinations += 1 if recombine_classes.index(a.aberration_class)
+    end
+
+    chr_location = bp.position
     unless chr_location.nil?
-      filehandle.write [bp.chromosome, bp.band, chr_location.start, chr_location.end, patients, cell_lines, bp.karyotypes.length, leuk_count].join("\t") + "\n"
+      filehandle.write [bp.chromosome, bp.band, chr_location.start, chr_location.end, breaks, recombinations, bp.aberrations.length, patients, cell_lines, bp.karyotypes.length, leuk_count].join("\t") + "\n"
       filehandle.flush
     end
   end
   filehandle.close
 end
+
+
 
 time = Time.new
 date = time.strftime("%d%m%Y")
@@ -105,32 +118,33 @@ FileUtils.mkpath(outdir) unless File.exists? outdir
 
 $LEUKEMIAS = ['Acute myeloid leukemia', 'Acute lymphoblastic leukemia', "Non-hodgkin's lymphoma", 'Chronic myelogenous leukemia', 'Chronic lymphocytic leukemia']
 
-## -- Breakpoints -- #
-write_breakpoints(Breakpoint.all, get_filehandle("#{outdir}/breakpoints.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'total.samples', 'leukemia.samples']))
+### -- Breakpoints -- #
+write_breakpoints(Breakpoint.all, get_filehandle("#{outdir}/breakpoints.txt", ['chr', 'band', 'start', 'end', 'total.breaks', 'total.recombination', 'total.aberrations', 'patients', 'cell.lines', 'total.karyotypes', 'leukemia.karyotypes']))
 
 ### -- Ploidy -- #
-write_ploidy(Aberration.where("aberration_class IN (?,?)", 'gain', 'loss'), get_filehandle("#{outdir}/ploidy.txt", ['class', 'chromosome', 'karyotypes']))
+#write_ploidy(Aberration.where("aberration_class IN (?,?)", 'gain', 'loss'), get_filehandle("#{outdir}/ploidy.txt", ['class', 'chromosome', 'karyotypes']))
 
 ### -- All known aberrations that have breakpoints -- #
-write_abr_file(Aberration.where("aberration_class != ?", 'unk'), get_filehandle("#{outdir}/aberrations.txt", ['class', 'aberration', 'breakpoints', 'karyotypes', 'leukemias']))
+#write_abr_file(Aberration.where("aberration_class != ?", 'unk'), get_filehandle("#{outdir}/aberrations.txt", ['class', 'aberration', 'breakpoints', 'karyotypes', 'leukemias']))
 
 # -- Cancer breakpoints -- #
-cncdir = "#{outdir}/cancer_bps"
-FileUtils.mkpath(cncdir)
-
-cancers = Cancer.all
-cancers.each do |cnc|
-  puts "#{cnc.name}: #{cnc.karyotypes.length}"
-  bps = []
-  cnc.karyotypes.each do |k|
-    bps << k.breakpoints
-  end
-  bps.flatten!
-  bps.uniq!{|bp| bp.id}
-
-  write_bp_cnc(bps,get_filehandle("#{cncdir}/#{cnc.name}.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'total.samples']))
-end
-
-
-
-
+#cncdir = "#{outdir}/cancer_bps"
+#FileUtils.rm_rf(cncdir) if File.exists?cncdir
+#FileUtils.mkpath(cncdir)
+#
+#cancers = Cancer.all
+#cancers.each do |cnc|
+#  puts "#{cnc.name}: #{cnc.karyotypes.length}"
+#  bps = []
+#  cnc.karyotypes.each do |k|
+#    bps << k.breakpoints
+#  end
+#  bps.flatten!
+#  bps.uniq!{|bp| bp.id}
+#
+#  filename = cnc.name.gsub(/\//, "_")
+#  filename.gsub!(/\s/, "_")
+#  write_breakpoints(bps,get_filehandle("#{cncdir}/#{filename}.txt", ['chr', 'band', 'start', 'end', 'patients', 'cell.lines', 'total.samples']))
+#end
+#
+#
