@@ -27,12 +27,14 @@ def create_karyotype_record(args)
         abrmodel = Aberration.find_or_create_by_aberration_and_aberration_class(abr, ab_class)
         ktmodel.aberrations << abrmodel
 
+        existing_bps = abrmodel.breakpoints.map{|bp| bp.id}
+
         if abr_bp_hash.has_key? abr
           abr_bp_hash[abr].each do |bp|
             bpmodel = Breakpoint.find_or_create_by_breakpoint(bp)
-            ktmodel.breakpoints << bpmodel
+            abrmodel.breakpoints << bpmodel unless existing_bps.index(bpmodel.id)
 
-            abrmodel.breakpoints << bpmodel
+            ktmodel.breakpoints << bpmodel
           end
         end
       end

@@ -18,7 +18,7 @@ ActiveRecord::Schema.define(:version => 0) do
     t.text   "aberration",                     :null => false
   end
 
-  create_table "aberrations_breakpoints", :force => true do |t|
+  create_table "aberrations_breakpoints", :id => false, :force => true do |t|
     t.integer "aberration_id", :null => false
     t.integer "breakpoint_id", :null => false
   end
