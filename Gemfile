@@ -8,7 +8,7 @@ gem 'rails', '3.2.11'
 gem 'mysql2'
 gem 'cytogenetics', '>= 0.0.5'
 
-#gem 'mongrel', '>= 1.2.0.pre2'
+
 gem 'thin'
 gem 'dispatcher'
 

@@ -2,6 +2,7 @@ require 'active_record'
 require 'rubygems'
 require 'fileutils'
 require 'cytogenetics'
+require 'simple_matrix'
 require 'logger'
 
 require 'yaml'
@@ -52,7 +53,7 @@ def write_ploidy(ktids, filehandle)
       puts "Karyotype #{kt.id}"
       kt.aberrations.each do |a|
         if a.aberration_class.match(/gain|loss/)
-          key = "#{a.aberration_class}#{a.aberration}"
+          key = a.aberration
           ch[key] = {:gain => 0, :loss => 0, :obj => a} unless ch.has_key? key
           ch[key][a.aberration_class.to_sym] += 1
 
@@ -62,11 +63,11 @@ def write_ploidy(ktids, filehandle)
     end
   end
 
-  kts.each_pair{ |k,l| l.uniq! }
+  kts.each_pair { |k, l| l.uniq! }
 
-  ch.each_pair do |key, stats|
-    kts[key].uniq!
-    filehandle.write [stats[:obj].aberration_class, stats[:obj].aberration, stats[stats[:obj].aberration_class.to_sym], kts[key].length].join("\t") + "\n"
+  ch.each_pair do |chr, stats|
+    kts[chr].uniq!
+    filehandle.write [chr, stats[:gain], stats[:loss], kts[chr].length].join("\t") + "\n"
     filehandle.flush
   end
   filehandle.close
@@ -142,7 +143,6 @@ def write_breakpoints(abrids, ktids, filehandle)
   filehandle.close
 end
 
-
 query = 2
 unless ARGV.length < 1
   query = ARGV[0].to_i
@@ -150,7 +150,6 @@ unless ARGV.length < 1
 #  puts "Require one of the following: 1 (all bps); 2 (ploidy); 3 (aberration); 4 (bps per cancer)"
 #  exit
 end
-
 
 time = Time.new
 date = time.strftime("%d%m%Y")
@@ -161,6 +160,7 @@ FileUtils.rm("#{Dir.home}/Data/sky-cgh/output/current") if File.exists?("#{Dir.h
 FileUtils.symlink(outdir, "#{Dir.home}/Data/sky-cgh/output/current")
 
 FileUtils.mkpath(outdir) unless File.exists? outdir
+
 
 ## These two account for about 34% of all karyotypes analyzed
 $LEUKEMIAS = ['Acute myeloid leukemia', 'Acute lymphoblastic leukemia']
@@ -178,6 +178,7 @@ leuk_abr_ids.sort!
 ### -- Breakpoints, separated top leukemias and all other cancers -- #
 if (query.eql? 1)
   cols = ['chr', 'band', 'start', 'end', 'total.breaks', 'total.recombination', 'total.aberrations', 'total.karyotypes']
+
   puts "Non leukemia aberrations: #{nonleuk_abr_ids.length}"
   write_breakpoints(nonleuk_abr_ids, nonleuk_kt_ids, get_filehandle("#{outdir}/noleuk-breakpoints.txt", cols))
 
@@ -187,7 +188,7 @@ end
 
 ### -- Ploidy -- #
 if (query.eql? 2)
-  cols = ['class', 'chromosome', 'count', 'karyotypes']
+  cols = ['chromosome', 'gain', 'loss', 'karyotypes']
   write_ploidy(nonleuk_kt_ids, get_filehandle("#{outdir}/noleuk-ploidy.txt", cols))
   write_ploidy(leukemia_karyotype_ids, get_filehandle("#{outdir}/leuk-ploidy.txt", cols))
 end
@@ -229,3 +230,91 @@ if (query.eql? 4)
 end
 
 
+if (query.eql? 5)
+  classes = Aberration.find_by_sql("SELECT DISTINCT aberration_class FROM aberrations").map { |a| a.aberration_class }
+
+  matrix = SimpleMatrix.new
+  matrix.colnames = classes
+
+  Breakpoint.all.each do |bp|
+
+    bps = {}
+    classes.each { |c| bps[c] = 0 }
+    bp.aberrations.each do |abr|
+      bps[abr.aberration_class] += 1
+    end
+
+    matrix.add_row(bp.breakpoint, classes.map { |c| bps[c] })
+  end
+
+  matrix.write("#{outdir}/bp-classes.txt")
+end
+
+if (query.eql? 6)
+  kt_bp_count = []
+  chr_kt_count = []
+  ploidy_count = []
+  Karyotype.find_in_batches do |batch|
+    batch.each do |kt|
+      puts "Karyotype #{kt.id}"
+      chrs = {}
+      bps = kt.breakpoints
+      bps.each do |bp|
+        chrs[bp.chromosome] = 0 unless chrs.has_key? bp.chromosome
+        chrs[bp.chromosome] += 1
+      end
+      bps.uniq!
+      kt_bp_count << bps.length
+      chr_kt_count << chrs.keys.length
+
+      pdy = 0
+      kt.aberrations.each do |abr|
+        pdy += 1 if abr.aberration_class.match(/gain|loss/)
+      end
+      ploidy_count << pdy
+    end
+  end
+
+  count = {}
+  kt_bp_count.each { |k| count[k] = 0 unless count.has_key? k; count[k] += 1 }
+  File.open("#{outdir}/bp_per_kt.txt", 'w') do |f|
+    f.write("# Total breakpoints per karyotype \n")
+    count.each_pair do |k, v|
+      f.write([k, v].join("\t") + "\n")
+    end
+  end
+
+  count = {}
+  chr_kt_count.each { |k| count[k] = 0 unless count.has_key? k; count[k] += 1 }
+  File.open("#{outdir}/chr_per_kt.txt", 'w') do |f|
+    f.write("# Total chromosomes involve in breakpoints per karyotype\n")
+    count.each_pair do |k, v|
+      f.write([k, v].join("\t") + "\n")
+    end
+  end
+
+  count = {}
+  ploidy_count.each { |k| count[k] = 0 unless count.has_key? k; count[k] += 1 }
+  File.open("#{outdir}/ploidy_per_kt.txt", 'w') do |f|
+    f.write("# Total aneuploidy per karyotype")
+    count.each_pair do |k, v|
+      f.write([k, v].join("\t") + "\n")
+    end
+  end
+
+end
+
+if query.eql? 7
+  puts "Getting counts..."
+  File.open("#{outdir}/abr_per_kt.txt", 'w') { |f|
+    f.write ['karyotype', 'aneuploidy.count', 'aberrations.count'].join("\t") + "\n"
+    Karyotype.find_in_batches do |batch|
+      puts batch.length
+      batch.each do |kt|
+        pdy = kt.aberrations.select { |abr| abr.aberration_class.match(/gain|loss/) }
+        abrs = kt.aberrations.reject { |abr| abr.aberration_class.match(/gain|loss/) }
+        f.write [kt.id, pdy.length, abrs.length].join("\t") + "\n"
+      end
+    end
+  }
+end
