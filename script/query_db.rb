@@ -106,29 +106,17 @@ def write_cnc_breakpoints(bps, filehandle)
 end
 
 def write_breakpoints(abrids, ktids, filehandle)
-  break_classes = ['trans', 'der', 'del', 'inv', 'dup']
-  recombine_classes = ['trans', 'der', 'add', 'ins', 'dup']
+  bph = {}
+  Breakpoint.find_in_batches do |batch|
+    batch.each do |bp|
+      puts "Breakpoint #{bp.id} #{bp.breakpoint}"
 
-  bph = {}; bpkt = []
-  Karyotype.where("id IN (#{ktids.join(',')})").find_in_batches do |batch|
-    batch.each do |kt|
+      abr_counts = Aberration.joins(:breakpoints).where("#{Breakpoint.table_name}.id = #{bp.id} AND #{Aberration.table_name}.id IN (#{abrids.join(',')})").count
+      kt_counts = Karyotype.joins(:breakpoints).where("#{Breakpoint.table_name}.id = #{bp.id} AND #{Karyotype.table_name}.id IN (#{ktids.join(',')})").count
 
-      puts "Karyotype #{kt.id}"
+      bph[bp.breakpoint] = {:obj => bp, :kts => kt_counts, :abrs => abr_counts}
 
-      kt.aberrations.each do |abr|
-        #bps = Breakpoint.joins(:aberrations).where("#{Aberration.table_name}.id = #{abr.id}")
-        abr.breakpoints.each do |bp|
-          bph[bp.breakpoint] = {:obj => bp, :kts => 0, :abrs => 0, :breaks => 0, :recomb => 0} unless bph.has_key? bp.breakpoint
-
-          bpkt << bp.breakpoint
-
-          bph[bp.breakpoint][:abrs] += 1
-          bph[bp.breakpoint][:breaks] += 1 if break_classes.index(abr.aberration_class)
-          bph[bp.breakpoint][:recomb] += 1 if recombine_classes.index(abr.aberration_class)
-        end
-      end
-      bpkt.uniq!
-      bpkt.each { |b| bph[b][:kts] += 1 }
+      puts [abr_counts, kt_counts].join("\t")
     end
   end
 
@@ -136,23 +124,23 @@ def write_breakpoints(abrids, ktids, filehandle)
     warn "Missing information for #{bp}: " + YAML::dump(stats) if stats[:obj].nil?
     location = stats[:obj].position
     unless location.nil?
-      filehandle.write [stats[:obj].chromosome, stats[:obj].band, location.start, location.end, stats[:abrs], stats[:breaks], stats[:recomb], stats[:kts]].join("\t") + "\n"
+      filehandle.write [stats[:obj].chromosome, stats[:obj].band, location.start, location.end, stats[:abrs], stats[:kts]].join("\t") + "\n"
       filehandle.flush
     end
   end
   filehandle.close
 end
 
-query = 2
+#query = 1
 unless ARGV.length < 1
   query = ARGV[0].to_i
-#else
-#  puts "Require one of the following: 1 (all bps); 2 (ploidy); 3 (aberration); 4 (bps per cancer)"
-#  exit
+else
+  puts "Require one of the following: 1 (all bps); 2 (ploidy); 3 (aberration); 4 (bps per cancer)"
+  exit
 end
 
 time = Time.new
-date = time.strftime("%d%m%Y")
+date = time.strftime("%Y%m%d")
 
 outdir = "#{Dir.home}/Data/sky-cgh/output/#{date}"
 
@@ -177,7 +165,7 @@ leuk_abr_ids.sort!
 
 ### -- Breakpoints, separated top leukemias and all other cancers -- #
 if (query.eql? 1)
-  cols = ['chr', 'band', 'start', 'end', 'total.breaks', 'total.recombination', 'total.aberrations', 'total.karyotypes']
+  cols = ['chr', 'band', 'start', 'end', 'total.aberrations', 'total.karyotypes']
 
   puts "Non leukemia aberrations: #{nonleuk_abr_ids.length}"
   write_breakpoints(nonleuk_abr_ids, nonleuk_kt_ids, get_filehandle("#{outdir}/noleuk-breakpoints.txt", cols))
@@ -231,23 +219,21 @@ end
 
 
 if (query.eql? 5)
-  classes = Aberration.find_by_sql("SELECT DISTINCT aberration_class FROM aberrations").map { |a| a.aberration_class }
+  all_classes = Aberration.select(:aberration_class).order("aberration_class ASC").pluck(:aberration_class).uniq
 
-  matrix = SimpleMatrix.new
-  matrix.colnames = classes
-
+  bph = {}
   Breakpoint.all.each do |bp|
-
-    bps = {}
-    classes.each { |c| bps[c] = 0 }
-    bp.aberrations.each do |abr|
-      bps[abr.aberration_class] += 1
-    end
-
-    matrix.add_row(bp.breakpoint, classes.map { |c| bps[c] })
+    classes = Hash[all_classes.map { |e| [e.to_sym, 0] }]
+    Aberration.joins(:breakpoints).where("#{Breakpoint.table_name}.id = #{bp.id}").pluck("aberration_class").map{|e| classes[e.to_sym] += 1 }
+    bph[bp.breakpoint] = classes
   end
 
-  matrix.write("#{outdir}/bp-classes.txt")
+  File.open("#{outdir}/bp-classes.txt", 'w') {|f|
+    f.write ['breakpoint', all_classes].flatten.join("\t") + "\n"
+    bph.each_pair do |bp, classes|
+      f.write [bp, all_classes.map{|e| classes[e.to_sym] }].flatten.join("\t") + "\n"
+    end
+  }
 end
 
 if (query.eql? 6)

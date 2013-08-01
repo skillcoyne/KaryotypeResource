@@ -1,12 +1,25 @@
-require 'rubygems'
-require 'biomart'
 require 'active_record'
+require 'biomart'
+require 'rubygems'
 require 'fileutils'
+require 'cytogenetics'
 require 'simple_matrix'
+require 'logger'
+
 require 'yaml'
 
 
-require File.expand_path(File.dirname(__FILE__) + "/../config/environment")
+ActiveRecord::Base.establish_connection(:adapter => 'mysql2',
+                                        :database => 'karyotypes',
+                                        :hostname => 'localhost',
+                                        :username => 'root',
+                                        :password => '',
+                                        :socket => '/tmp/mysql.sock')
+
+Dir.glob("../app/models/*.rb").each do |r|
+  require r
+end
+
 
 chrs = Array(1..22)
 chrs << 'X'
@@ -57,7 +70,7 @@ puts chr
 
 end
 
-outdir = "#{Dir.home}/Data/sky-cgh/output"
+outdir = "#{Dir.home}/Data/sky-cgh/genomic_info"
 m.write("#{outdir}/band_genes.txt", :rownames => false)
 
 m.write(nil, :rownames => false)
